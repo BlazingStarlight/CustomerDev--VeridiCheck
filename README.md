@@ -76,9 +76,10 @@ GEMINI_MODEL=gemini-3.5-flash
 EMAILJS_SERVICE_ID=service_xxxxxxx
 EMAILJS_TEMPLATE_ID=template_xxxxxxx
 EMAILJS_PUBLIC_KEY=tu_clave_publica
+EMAILJS_PRIVATE_KEY=tu_clave_privada
 ```
 
-En EmailJS, conecta primero un servicio de correo y crea una plantilla. Configura el campo **To Email** como `{{to_email}}`, el asunto como `{{subject}}` y el cuerpo HTML como `{{{report_html}}}` (tres llaves para renderizar el HTML del reporte). Los identificadores se encuentran en **Email Services**, **Email Templates** y **Account > API Keys**. La API `/send` usa la clave pública; la clave privada solo debe añadirse si activas expresamente esa autorización en **Account > Security**.
+En EmailJS, conecta primero un servicio de correo y crea una plantilla. Configura el campo **To Email** como `{{to_email}}`, el asunto como `{{subject}}` y el cuerpo HTML como `{{{report_html}}}` (tres llaves para renderizar el HTML del reporte). Los identificadores se encuentran en **Email Services**, **Email Templates** y **Account > API Keys**. En **Account > Security**, activa **Allow EmailJS API for non-browser applications** y mantén habilitado **Use Private Key**. La clave privada se envía únicamente desde el backend y nunca debe exponerse en el navegador.
 
 ---
 
@@ -101,7 +102,7 @@ Verás una salida en consola indicando que el servidor está corriendo. Abre tu 
 El proyecto incluye `app.py`, `.python-version` y `vercel.json`, por lo que Vercel detecta FastAPI automáticamente.
 
 1. Publica el repositorio en GitHub e impórtalo desde el panel de Vercel.
-2. En **Settings > Environment Variables**, agrega `GEMINI_API_KEY`, `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID` y `EMAILJS_PUBLIC_KEY`.
+2. En **Settings > Environment Variables**, agrega `GEMINI_API_KEY`, `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`, `EMAILJS_PUBLIC_KEY` y `EMAILJS_PRIVATE_KEY`.
 3. Despliega sin configurar Build Command ni Output Directory.
 4. Verifica `/`, `/docs` y una solicitud real desde la interfaz.
 

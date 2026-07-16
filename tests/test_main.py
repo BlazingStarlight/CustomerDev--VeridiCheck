@@ -65,6 +65,7 @@ class ApiTests(unittest.TestCase):
                 "EMAILJS_SERVICE_ID": "service_test",
                 "EMAILJS_TEMPLATE_ID": "template_test",
                 "EMAILJS_PUBLIC_KEY": "public_test",
+                "EMAILJS_PRIVATE_KEY": "private_test",
             },
             clear=False,
         ):
@@ -83,7 +84,7 @@ class ApiTests(unittest.TestCase):
         payload = request.kwargs["json"]
         self.assertEqual(payload["template_params"]["to_email"], "usuario@example.com")
         self.assertIn("Reporte de VeridiCheck", payload["template_params"]["report_html"])
-        self.assertNotIn("accessToken", payload)
+        self.assertEqual(payload["accessToken"], "private_test")
 
 
 if __name__ == "__main__":
