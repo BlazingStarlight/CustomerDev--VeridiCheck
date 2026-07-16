@@ -714,7 +714,7 @@ body {
 .results-panel.malicious-theme .result-list li::before { color: var(--color-malicious); }
 
 /* Notificación / Alerta */
-.whatsapp-alert {
+.email-alert {
     border-radius: 12px;
     padding: 1rem 1.25rem;
     display: flex;
@@ -724,7 +724,7 @@ body {
     border: 1px solid transparent;
 }
 
-.whatsapp-alert svg {
+.email-alert svg {
     width: 20px;
     height: 20px;
     flex-shrink: 0;

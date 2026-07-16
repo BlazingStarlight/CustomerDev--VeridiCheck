@@ -1,8 +1,8 @@
-// Recuperar número guardado al iniciar la página
+// Recuperar correo guardado al iniciar la página
 document.addEventListener("DOMContentLoaded", () => {
-    const savedPhone = localStorage.getItem("veridicheck_phone") || localStorage.getItem("cybershield_phone");
-    if (savedPhone) {
-        document.getElementById("phone-input").value = savedPhone;
+    const savedEmail = localStorage.getItem("veridicheck_email");
+    if (savedEmail) {
+        document.getElementById("email-input").value = savedEmail;
     }
 });
 
@@ -18,14 +18,13 @@ const loadingSteps = [
 async function handleFormSubmit(event) {
     event.preventDefault();
 
-    const phoneInput = document.getElementById("phone-input").value.trim();
+    const emailInput = document.getElementById("email-input").value.trim();
     const contentInput = document.getElementById("content-input").value.trim();
 
-    if (!phoneInput || !contentInput) return;
+    if (!emailInput || !contentInput) return;
 
-    // Guardar teléfono en LocalStorage
-    localStorage.setItem("veridicheck_phone", phoneInput);
-    localStorage.removeItem("cybershield_phone");
+    // Guardar correo en LocalStorage
+    localStorage.setItem("veridicheck_email", emailInput);
 
     // Obtener referencias de secciones
     const scannerSection = document.getElementById("scanner-section");
@@ -58,7 +57,7 @@ async function handleFormSubmit(event) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                phone_number: phoneInput,
+                email: emailInput,
                 query: contentInput
             })
         });
@@ -73,7 +72,7 @@ async function handleFormSubmit(event) {
         const data = await response.json();
 
         // Renderizar Resultados
-        displayResults(data, phoneInput);
+        displayResults(data);
 
     } catch (error) {
         clearInterval(loadingInterval);
@@ -83,7 +82,7 @@ async function handleFormSubmit(event) {
 }
 
 // Renderizar Resultados
-function displayResults(data, phone) {
+function displayResults(data) {
     const loadingSection = document.getElementById("loading-section");
     const resultsSection = document.getElementById("results-section");
 
@@ -159,29 +158,22 @@ function displayResults(data, phone) {
         recommendationsContainer.innerHTML = "<li>Mantente alerta ante cualquier cambio en el remitente.</li>";
     }
 
-    // Configurar Alerta de Envío de WhatsApp Automático
-    const waAlert = document.getElementById("whatsapp-status-alert");
-    const waAlertText = document.getElementById("whatsapp-status-text");
-    waAlert.className = "whatsapp-alert"; // Limpiar clases secundarias
+    // Configurar alerta de envío por correo
+    const emailAlert = document.getElementById("email-status-alert");
+    const emailAlertText = document.getElementById("email-status-text");
+    emailAlert.className = "email-alert"; // Limpiar clases secundarias
 
-    if (data.whatsapp_sent) {
-        waAlert.classList.add("success-alert");
-        waAlertText.textContent = "¡Reporte enviado automáticamente a tu WhatsApp con éxito!";
+    if (data.email_sent) {
+        emailAlert.classList.add("success-alert");
+        emailAlertText.textContent = "Enviamos una copia del reporte a tu correo.";
     } else {
-        // En caso de error o Twilio no configurado
-        waAlert.classList.add("info-alert");
-        if (data.whatsapp_status.includes("no configurado")) {
-            waAlertText.textContent = "Envío automático no configurado en servidor. Utiliza el botón de abajo para enviar manualmente.";
-        } else {
-            waAlertText.textContent = `No se pudo enviar automáticamente: ${data.whatsapp_status}. Utiliza el botón manual.`;
-        }
+        emailAlert.classList.add("info-alert");
+        emailAlertText.textContent = data.email_status;
     }
 
-    // Configurar Botón Manual de WhatsApp Click-to-Chat (wa.me)
-    // Limpiar el teléfono para wa.me (debe contener solo dígitos, sin el + inicial)
-    const cleanPhone = phone.replace(/\D/g, "");
+    // Compartir el reporte con cualquier contacto elegido por el usuario.
     const encodedMessage = encodeURIComponent(data.whatsapp_message);
-    const waUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+    const waUrl = `https://wa.me/?text=${encodedMessage}`;
 
     const waBtn = document.getElementById("whatsapp-manual-btn");
     waBtn.href = waUrl;

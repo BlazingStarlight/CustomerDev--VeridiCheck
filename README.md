@@ -1,6 +1,6 @@
 # VeridiCheck - Analizador de Mensajes y Enlaces Sospechosos
 
-Este proyecto es una aplicación web interactiva que te permite verificar si un mensaje, correo electrónico o enlace (URL) es legítimo o si tiene intenciones maliciosas (como phishing o estafas). Utiliza la Inteligencia Artificial de Google Gemini para realizar una auditoría de seguridad instantánea y te ofrece los resultados en una interfaz premium y listos para enviar a tu WhatsApp.
+Este proyecto es una aplicación web interactiva que te permite verificar si un mensaje, correo electrónico o enlace (URL) es legítimo o si tiene intenciones maliciosas (como phishing o estafas). Utiliza Google Gemini para realizar un análisis de seguridad, muestra el resultado en la interfaz y envía una copia por correo electrónico.
 
 ---
 
@@ -8,9 +8,8 @@ Este proyecto es una aplicación web interactiva que te permite verificar si un 
 
 - **Análisis Inteligente**: Clasifica la amenaza en una de tres categorías: *Seguro*, *Sospechoso* o *Malicioso*.
 - **Métricas de Seguridad**: Te otorga una puntuación de riesgo detallada (0-100%), tipo de amenaza y razones específicas del porqué de su clasificación.
-- **Doble Distribución en WhatsApp**:
-  - **Automático (API)**: Envío automático a tu teléfono mediante Twilio si configuras tus credenciales en el archivo `.env`.
-  - **Manual (Click-to-Chat)**: Genera un botón instantáneo que abre WhatsApp Web o WhatsApp Móvil con el texto del reporte precargado, ideal para compartirlo con amigos, familiares o guardarlo para ti mismo.
+- **Copia automática por correo**: Envía el reporte mediante Resend cuando sus variables están configuradas.
+- **Compartir por WhatsApp**: Abre WhatsApp con el reporte precargado para que el usuario elija un amigo o familiar.
 - **Diseño Premium**: Interfaz moderna, oscura e inspirada en dashboards de ciberseguridad, utilizando efectos translúcidos (glassmorphism) y animaciones de radar radar.
 - **Modo Demo Resiliente**: Si no tienes una clave de API de Gemini a la mano, la aplicación entrará automáticamente en un **modo de simulación interactiva**. Podrás probar el funcionamiento pegando mensajes comunes de estafas bancarias o sorteos falsos.
 
@@ -73,13 +72,12 @@ Abre el archivo `.env` recién creado en tu editor de código favorito y configu
 GEMINI_API_KEY=tu_clave_de_gemini_aqui
 GEMINI_MODEL=gemini-3.5-flash
 
-# (Opcional) Si quieres envío automatizado por WhatsApp (Twilio)
-TWILIO_ACCOUNT_SID=tu_twilio_sid
-TWILIO_AUTH_TOKEN=tu_twilio_token
-TWILIO_SENDER_NUMBER=whatsapp:+14155238886
+# Copia automática del reporte por correo mediante Resend
+RESEND_API_KEY=tu_clave_de_resend
+RESEND_FROM_EMAIL=VeridiCheck <reportes@tu-dominio.com>
 ```
-> [!TIP]
-> Si deseas usar el envío automático de Twilio en modo de prueba, debes registrar tu número personal en el "Twilio WhatsApp Sandbox" siguiendo las instrucciones de la consola de administración de tu cuenta Twilio (enviar un mensaje de WhatsApp como `join <palabra-clave>` al número remitente).
+
+Para enviar a cualquier destinatario, Resend requiere verificar el dominio usado en `RESEND_FROM_EMAIL`. Durante las pruebas puedes utilizar el remitente de prueba de Resend, sujeto a sus restricciones de destinatario.
 
 ---
 
@@ -102,7 +100,7 @@ Verás una salida en consola indicando que el servidor está corriendo. Abre tu 
 El proyecto incluye `app.py`, `.python-version` y `vercel.json`, por lo que Vercel detecta FastAPI automáticamente.
 
 1. Publica el repositorio en GitHub e impórtalo desde el panel de Vercel.
-2. En **Settings > Environment Variables**, agrega `GEMINI_API_KEY` y, si usarás envío automático, las tres variables `TWILIO_*` descritas arriba.
+2. En **Settings > Environment Variables**, agrega `GEMINI_API_KEY`, `RESEND_API_KEY` y `RESEND_FROM_EMAIL`.
 3. Despliega sin configurar Build Command ni Output Directory.
 4. Verifica `/`, `/docs` y una solicitud real desde la interfaz.
 

@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from main import GEMINI_MODEL, app, clean_phone_number
+from main import GEMINI_MODEL, app, build_email_html, get_mock_analysis
 
 
 class ApiTests(unittest.TestCase):
@@ -16,16 +16,13 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("VeridiCheck", response.text)
 
-    def test_phone_normalization(self):
-        self.assertEqual(clean_phone_number("+51 999-888-777"), "+51999888777")
-
     def test_uses_current_stable_gemini_model(self):
         self.assertEqual(GEMINI_MODEL, "gemini-3.5-flash")
 
-    def test_invalid_phone_is_rejected(self):
+    def test_invalid_email_is_rejected(self):
         response = self.client.post(
             "/api/verify",
-            json={"phone_number": "123", "query": "Mensaje de prueba"},
+            json={"email": "correo-invalido", "query": "Mensaje de prueba"},
         )
         self.assertEqual(response.status_code, 422)
 
@@ -34,7 +31,7 @@ class ApiTests(unittest.TestCase):
         response = self.client.post(
             "/api/verify",
             json={
-                "phone_number": "+51999888777",
+                "email": "usuario@example.com",
                 "query": "Urgente: verifica tu cuenta bancaria en este enlace",
             },
         )
@@ -44,6 +41,13 @@ class ApiTests(unittest.TestCase):
         self.assertTrue(payload["is_demo"])
         self.assertGreaterEqual(payload["score"], 0)
         self.assertLessEqual(payload["score"], 100)
+
+    def test_email_report_escapes_generated_content(self):
+        result = get_mock_analysis("Mensaje normal")
+        result.summary = "<script>alert('x')</script>"
+        report = build_email_html(result)
+        self.assertNotIn("<script>", report)
+        self.assertIn("&lt;script&gt;", report)
 
 
 if __name__ == "__main__":

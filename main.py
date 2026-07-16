@@ -1,8 +1,9 @@
 import os
-import re
 import logging
+import html
 from pathlib import Path
 from typing import List, Literal
+import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -10,7 +11,6 @@ from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from twilio.rest import Client as TwilioClient
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -27,7 +27,11 @@ app = FastAPI(
 
 # Esquema para la solicitud
 class VerificationRequest(BaseModel):
-    phone_number: str = Field(min_length=8, max_length=24)
+    email: str = Field(
+        min_length=5,
+        max_length=254,
+        pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$",
+    )
     query: str = Field(min_length=3, max_length=12_000)
 
 # Esquema Pydantic para estructurar la respuesta de Gemini
@@ -40,34 +44,54 @@ class VerificationResult(BaseModel):
     recommendations: List[str] = Field(description="A bulleted list of 2 to 3 actionable security recommendations/next steps for the user in Spanish.")
     whatsapp_message: str = Field(description="A beautifully formatted summary of the analysis in Spanish, optimized for reading on WhatsApp. Include bold text (using asterisks *), clear bullet points, relevant emojis, and a professional warning/safe tone.")
 
-# Limpiar número de teléfono para WhatsApp
-def clean_phone_number(phone: str) -> str:
-    digits = re.sub(r"\D", "", phone)
-    if not 8 <= len(digits) <= 15:
-        raise ValueError("El número debe incluir código de país y tener entre 8 y 15 dígitos.")
-    return f"+{digits}"
+def build_email_html(result: "VerificationResult") -> str:
+    reasons = "".join(f"<li>{html.escape(item)}</li>" for item in result.reasons)
+    recommendations = "".join(
+        f"<li>{html.escape(item)}</li>" for item in result.recommendations
+    )
+    return f"""
+    <!doctype html>
+    <html lang="es">
+      <body style="font-family:Arial,sans-serif;color:#172033;line-height:1.6">
+        <h1>Reporte de VeridiCheck</h1>
+        <p><strong>Clasificación:</strong> {html.escape(result.status.title())}</p>
+        <p><strong>Nivel de riesgo:</strong> {result.score}/100</p>
+        <p><strong>Tipo de amenaza:</strong> {html.escape(result.threat_type)}</p>
+        <h2>Resumen</h2>
+        <p>{html.escape(result.summary)}</p>
+        <h2>Indicadores detectados</h2>
+        <ul>{reasons}</ul>
+        <h2>Recomendaciones</h2>
+        <ul>{recommendations}</ul>
+        <p style="color:#64748b">Este análisis es orientativo. Ante cualquier duda, verifica mediante canales oficiales.</p>
+      </body>
+    </html>
+    """
 
-# Función para enviar WhatsApp con Twilio
-def send_whatsapp(to_phone: str, message_body: str) -> tuple[bool, str]:
-    account_sid = os.getenv("TWILIO_ACCOUNT_SID")
-    auth_token = os.getenv("TWILIO_AUTH_TOKEN")
-    sender_number = os.getenv("TWILIO_SENDER_NUMBER", "whatsapp:+14155238886")
 
-    if not account_sid or not auth_token or account_sid.strip() == "" or auth_token.strip() == "":
-        return False, "Twilio no configurado. Utiliza el enlace manual."
+async def send_report_email(to_email: str, result: "VerificationResult") -> tuple[bool, str]:
+    api_key = os.getenv("RESEND_API_KEY", "").strip()
+    from_email = os.getenv("RESEND_FROM_EMAIL", "").strip()
+    if not api_key or not from_email:
+        return False, "El envío por correo aún no está configurado."
 
     try:
-        clean_to = clean_phone_number(to_phone)
-        client = TwilioClient(account_sid, auth_token)
-        message = client.messages.create(
-            from_=sender_number,
-            body=message_body,
-            to=f"whatsapp:{clean_to}"
-        )
-        return True, "Mensaje enviado automáticamente a WhatsApp."
+        async with httpx.AsyncClient(timeout=15) as client:
+            response = await client.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {api_key}"},
+                json={
+                    "from": from_email,
+                    "to": [to_email],
+                    "subject": f"Reporte VeridiCheck: {result.status.title()} ({result.score}/100)",
+                    "html": build_email_html(result),
+                },
+            )
+            response.raise_for_status()
+        return True, "Enviamos una copia del reporte a tu correo."
     except Exception:
-        logger.exception("No se pudo enviar el reporte mediante Twilio")
-        return False, "No fue posible completar el envío automático."
+        logger.exception("No se pudo enviar el reporte mediante Resend")
+        return False, "No fue posible enviar la copia por correo."
 
 # Simulación de respuesta de IA cuando no hay API Key de Gemini
 def get_mock_analysis(query: str) -> VerificationResult:
@@ -168,11 +192,6 @@ def get_mock_analysis(query: str) -> VerificationResult:
 async def verify_content(request: VerificationRequest):
     if not request.query.strip():
         raise HTTPException(status_code=400, detail="El contenido a analizar no puede estar vacío.")
-    try:
-        clean_phone_number(request.phone_number)
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-
     gemini_key = os.getenv("GEMINI_API_KEY")
 
     # Verificar si la clave API está configurada o si es la por defecto
@@ -218,14 +237,7 @@ async def verify_content(request: VerificationRequest):
             result.summary = "[MODO DEMO - El servicio de IA no está disponible] " + result.summary
             is_demo = True
 
-    # Intentar enviar mensaje a WhatsApp automáticamente si Twilio está configurado
-    whatsapp_sent = False
-    whatsapp_status = "No configurado (uso de enlace manual)"
-
-    if request.phone_number.strip():
-        success, status_msg = send_whatsapp(request.phone_number, result.whatsapp_message)
-        whatsapp_sent = success
-        whatsapp_status = status_msg
+    email_sent, email_status = await send_report_email(request.email, result)
 
     return {
         "status": result.status, # seguro, sospechoso, malicioso
@@ -235,8 +247,8 @@ async def verify_content(request: VerificationRequest):
         "reasons": result.reasons,
         "recommendations": result.recommendations,
         "whatsapp_message": result.whatsapp_message,
-        "whatsapp_sent": whatsapp_sent,
-        "whatsapp_status": whatsapp_status,
+        "email_sent": email_sent,
+        "email_status": email_status,
         "is_demo": is_demo
     }
 
