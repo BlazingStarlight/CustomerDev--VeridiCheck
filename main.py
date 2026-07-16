@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 # En Vercel las variables se configuran en el panel; .env se usa solo en local.
 load_dotenv(BASE_DIR / ".env")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
 GEMINI_TIMEOUT_SECONDS = 25
 
 app = FastAPI(
