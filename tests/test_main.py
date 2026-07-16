@@ -1,6 +1,6 @@
 import os
 import unittest
-from unittest.mock import patch
+from unittest.mock import AsyncMock, Mock, patch
 
 from fastapi.testclient import TestClient
 
@@ -48,6 +48,36 @@ class ApiTests(unittest.TestCase):
         report = build_email_html(result)
         self.assertNotIn("<script>", report)
         self.assertIn("&lt;script&gt;", report)
+
+    @patch("main.httpx.AsyncClient")
+    def test_resend_invalid_key_returns_actionable_status(self, client_class):
+        response = Mock()
+        response.is_error = True
+        response.status_code = 403
+        response.json.return_value = {
+            "name": "invalid_api_key",
+            "message": "API key is invalid",
+        }
+        client = AsyncMock()
+        client.post.return_value = response
+        client_class.return_value.__aenter__.return_value = client
+
+        with patch.dict(
+            os.environ,
+            {
+                "RESEND_API_KEY": "re_test",
+                "RESEND_FROM_EMAIL": "VeridiCheck <onboarding@resend.dev>",
+            },
+        ):
+            from main import send_report_email
+            import asyncio
+
+            sent, status = asyncio.run(
+                send_report_email("usuario@example.com", get_mock_analysis("Mensaje normal"))
+            )
+
+        self.assertFalse(sent)
+        self.assertIn("clave", status.lower())
 
 
 if __name__ == "__main__":

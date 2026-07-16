@@ -79,7 +79,10 @@ async def send_report_email(to_email: str, result: "VerificationResult") -> tupl
         async with httpx.AsyncClient(timeout=15) as client:
             response = await client.post(
                 "https://api.resend.com/emails",
-                headers={"Authorization": f"Bearer {api_key}"},
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "User-Agent": "VeridiCheck/1.0",
+                },
                 json={
                     "from": from_email,
                     "to": [to_email],
@@ -87,7 +90,24 @@ async def send_report_email(to_email: str, result: "VerificationResult") -> tupl
                     "html": build_email_html(result),
                 },
             )
-            response.raise_for_status()
+            if response.is_error:
+                try:
+                    provider_error = response.json()
+                except ValueError:
+                    provider_error = {}
+                error_name = str(provider_error.get("name", "unknown_error"))
+                error_message = str(provider_error.get("message", ""))
+                logger.error(
+                    "Resend rechazó el envío: status=%s name=%s message=%s",
+                    response.status_code,
+                    error_name,
+                    error_message,
+                )
+                if error_name == "invalid_api_key":
+                    return False, "La clave de correo no es válida. Crea una nueva clave de envío en Resend."
+                if response.status_code == 403:
+                    return False, "Resend rechazó el remitente o el destinatario. Revisa la verificación del dominio y los permisos de la clave."
+                return False, "Resend rechazó el envío. Revisa la configuración del servicio de correo."
         return True, "Enviamos una copia del reporte a tu correo."
     except Exception:
         logger.exception("No se pudo enviar el reporte mediante Resend")
