@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from main import app, clean_phone_number
+from main import GEMINI_MODEL, app, clean_phone_number
 
 
 class ApiTests(unittest.TestCase):
@@ -18,6 +18,9 @@ class ApiTests(unittest.TestCase):
 
     def test_phone_normalization(self):
         self.assertEqual(clean_phone_number("+51 999-888-777"), "+51999888777")
+
+    def test_uses_current_stable_gemini_model(self):
+        self.assertEqual(GEMINI_MODEL, "gemini-3.5-flash")
 
     def test_invalid_phone_is_rejected(self):
         response = self.client.post(

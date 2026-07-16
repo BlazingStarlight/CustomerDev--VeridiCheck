@@ -71,6 +71,7 @@ Abre el archivo `.env` recién creado en tu editor de código favorito y configu
 ```env
 # Introduce tu clave de Gemini obtenida en Google AI Studio
 GEMINI_API_KEY=tu_clave_de_gemini_aqui
+GEMINI_MODEL=gemini-3.5-flash
 
 # (Opcional) Si quieres envío automatizado por WhatsApp (Twilio)
 TWILIO_ACCOUNT_SID=tu_twilio_sid

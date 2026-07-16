@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 # En Vercel las variables se configuran en el panel; .env se usa solo en local.
 load_dotenv(BASE_DIR / ".env")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 
 app = FastAPI(
     title="Analizador LLM de Mensajes Sospechosos",
@@ -198,7 +199,7 @@ async def verify_content(request: VerificationRequest):
 
             # Generar contenido estructurado
             response = client.models.generate_content(
-                model='gemini-2.5-flash',
+                model=GEMINI_MODEL,
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
