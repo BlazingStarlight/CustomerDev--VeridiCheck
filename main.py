@@ -1,6 +1,7 @@
 import os
 import logging
 import html
+import asyncio
 from pathlib import Path
 from typing import List, Literal
 import httpx
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 # En Vercel las variables se configuran en el panel; .env se usa solo en local.
 load_dotenv(BASE_DIR / ".env")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+GEMINI_TIMEOUT_SECONDS = 25
 
 app = FastAPI(
     title="Analizador LLM de Mensajes Sospechosos",
@@ -239,20 +241,34 @@ async def verify_content(request: VerificationRequest):
             """
 
             # Generar contenido estructurado
-            response = client.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    response_schema=VerificationResult,
-                    system_instruction="Eres un analista experto en ciberseguridad. Tu objetivo es clasificar contenido sospechoso y dar recomendaciones claras y concisas al usuario en español."
-                ),
-            )
+            try:
+                response = await asyncio.wait_for(
+                    client.aio.models.generate_content(
+                        model=GEMINI_MODEL,
+                        contents=prompt,
+                        config=types.GenerateContentConfig(
+                            response_mime_type="application/json",
+                            response_schema=VerificationResult,
+                            system_instruction="Eres un analista experto en ciberseguridad. Tu objetivo es clasificar contenido sospechoso y dar recomendaciones claras y concisas al usuario en español."
+                        ),
+                    ),
+                    timeout=GEMINI_TIMEOUT_SECONDS,
+                )
+            finally:
+                await client.aio.aclose()
 
             # El SDK analiza el JSON directamente y lo carga en el objeto Pydantic
             result = response.parsed
 
-        except Exception as e:
+        except TimeoutError:
+            logger.warning(
+                "Gemini no respondió en %s segundos; se utilizará el análisis de respaldo",
+                GEMINI_TIMEOUT_SECONDS,
+            )
+            result = get_mock_analysis(request.query)
+            result.summary = "[MODO DEMO - Gemini excedió el tiempo de respuesta] " + result.summary
+            is_demo = True
+        except Exception:
             logger.exception("Error al solicitar el análisis a Gemini")
             # Fallback a simulación si la API falla por saldo, red, etc.
             result = get_mock_analysis(request.query)

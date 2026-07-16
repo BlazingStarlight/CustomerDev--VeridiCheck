@@ -1,3 +1,4 @@
+import asyncio
 import os
 import unittest
 from unittest.mock import AsyncMock, Mock, patch
@@ -48,6 +49,32 @@ class ApiTests(unittest.TestCase):
         report = build_email_html(result)
         self.assertNotIn("<script>", report)
         self.assertIn("&lt;script&gt;", report)
+
+    @patch("main.send_report_email", new_callable=AsyncMock)
+    @patch("main.genai.Client")
+    def test_gemini_timeout_uses_fallback_and_still_sends_email(self, client_class, send_email):
+        gemini_client = Mock()
+        gemini_client.aio.models.generate_content = AsyncMock(side_effect=asyncio.TimeoutError)
+        gemini_client.aio.aclose = AsyncMock()
+        client_class.return_value = gemini_client
+        send_email.return_value = (True, "Enviamos una copia del reporte a tu correo.")
+
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"}, clear=False):
+            response = self.client.post(
+                "/api/verify",
+                json={
+                    "email": "usuario@example.com",
+                    "query": "Urgente: confirma tu contraseña bancaria",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["is_demo"])
+        self.assertTrue(payload["email_sent"])
+        self.assertIn("tiempo de respuesta", payload["summary"])
+        send_email.assert_awaited_once()
+        gemini_client.aio.aclose.assert_awaited_once()
 
     @patch("main.httpx.AsyncClient")
     def test_emailjs_invalid_key_returns_actionable_status(self, client_class):

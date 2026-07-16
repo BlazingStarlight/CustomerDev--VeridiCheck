@@ -81,6 +81,8 @@ EMAILJS_PRIVATE_KEY=tu_clave_privada
 
 En EmailJS, conecta primero un servicio de correo y crea una plantilla. Configura el campo **To Email** como `{{to_email}}`, el asunto como `{{subject}}` y el cuerpo HTML como `{{{report_html}}}` (tres llaves para renderizar el HTML del reporte). Los identificadores se encuentran en **Email Services**, **Email Templates** y **Account > API Keys**. En **Account > Security**, activa **Allow EmailJS API for non-browser applications** y mantén habilitado **Use Private Key**. La clave privada se envía únicamente desde el backend y nunca debe exponerse en el navegador.
 
+Las solicitudes a Gemini tienen un límite interno de 25 segundos. Si el servicio no responde a tiempo, VeridiCheck usa el análisis de respaldo y continúa con el envío del reporte para evitar que la solicitud quede bloqueada hasta el timeout de Vercel.
+
 ---
 
 ## Cómo Ejecutar la Aplicación
