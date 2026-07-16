@@ -73,7 +73,6 @@ async def send_report_email(to_email: str, result: "VerificationResult") -> tupl
     service_id = os.getenv("EMAILJS_SERVICE_ID", "").strip()
     template_id = os.getenv("EMAILJS_TEMPLATE_ID", "").strip()
     public_key = os.getenv("EMAILJS_PUBLIC_KEY", "").strip()
-    private_key = os.getenv("EMAILJS_PRIVATE_KEY", "").strip()
     if not service_id or not template_id or not public_key:
         return False, "El envío por correo aún no está configurado."
 
@@ -88,9 +87,6 @@ async def send_report_email(to_email: str, result: "VerificationResult") -> tupl
                 "report_html": build_email_html(result),
             },
         }
-        if private_key:
-            payload["accessToken"] = private_key
-
         async with httpx.AsyncClient(timeout=15) as client:
             response = await client.post(
                 "https://api.emailjs.com/api/v1.0/email/send",
