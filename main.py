@@ -73,7 +73,8 @@ async def send_report_email(to_email: str, result: "VerificationResult") -> tupl
     service_id = os.getenv("EMAILJS_SERVICE_ID", "").strip()
     template_id = os.getenv("EMAILJS_TEMPLATE_ID", "").strip()
     public_key = os.getenv("EMAILJS_PUBLIC_KEY", "").strip()
-    if not service_id or not template_id or not public_key:
+    private_key = os.getenv("EMAILJS_PRIVATE_KEY", "").strip()
+    if not service_id or not template_id or not public_key or not private_key:
         return False, "El envío por correo aún no está configurado."
 
     try:
@@ -81,6 +82,7 @@ async def send_report_email(to_email: str, result: "VerificationResult") -> tupl
             "service_id": service_id,
             "template_id": template_id,
             "user_id": public_key,
+            "accessToken": private_key,
             "template_params": {
                 "to_email": to_email,
                 "subject": f"Reporte VeridiCheck: {result.status.title()} ({result.score}/100)",
