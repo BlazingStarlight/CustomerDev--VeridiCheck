@@ -1,6 +1,6 @@
 // Recuperar número guardado al iniciar la página
 document.addEventListener("DOMContentLoaded", () => {
-    const savedPhone = localStorage.getItem("cybershield_phone");
+    const savedPhone = localStorage.getItem("veridicheck_phone") || localStorage.getItem("cybershield_phone");
     if (savedPhone) {
         document.getElementById("phone-input").value = savedPhone;
     }
@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Mensajes de carga dinámicos para simular escaneo
 const loadingSteps = [
-    { title: "Iniciando análisis...", desc: "Estableciendo conexión segura con CyberShield AI..." },
+    { title: "Iniciando análisis...", desc: "Estableciendo conexión segura con VeridiCheck..." },
     { title: "Evaluando remitente...", desc: "Buscando patrones conocidos de fraude e ingeniería social..." },
     { title: "Analizando enlaces...", desc: "Verificando reputación de dominios y redireccionamientos..." },
     { title: "Procesando heurística...", desc: "Consultando el modelo de lenguaje para el dictamen final..." }
@@ -24,7 +24,8 @@ async function handleFormSubmit(event) {
     if (!phoneInput || !contentInput) return;
 
     // Guardar teléfono en LocalStorage
-    localStorage.setItem("cybershield_phone", phoneInput);
+    localStorage.setItem("veridicheck_phone", phoneInput);
+    localStorage.removeItem("cybershield_phone");
 
     // Obtener referencias de secciones
     const scannerSection = document.getElementById("scanner-section");

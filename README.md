@@ -1,4 +1,4 @@
-# CyberShield AI - Analizador de Mensajes y Enlaces Sospechosos
+# VeridiCheck - Analizador de Mensajes y Enlaces Sospechosos
 
 Este proyecto es una aplicación web interactiva que te permite verificar si un mensaje, correo electrónico o enlace (URL) es legítimo o si tiene intenciones maliciosas (como phishing o estafas). Utiliza la Inteligencia Artificial de Google Gemini para realizar una auditoría de seguridad instantánea y te ofrece los resultados en una interfaz premium y listos para enviar a tu WhatsApp.
 
@@ -111,7 +111,7 @@ No subas `.env`: está excluido por `.gitignore`. El modo demo es útil para des
 
 ## Casos de Prueba Recomendados para Probar el Escáner
 
-Si ejecutas la aplicación en **Modo Simulación** (sin configurar la API Key de Gemini), puedes pegar los siguientes textos de ejemplo en la interfaz para probar cómo reacciona CyberShield AI:
+Si ejecutas la aplicación en **Modo Simulación** (sin configurar la API Key de Gemini), puedes pegar los siguientes textos de ejemplo en la interfaz para probar cómo reacciona VeridiCheck:
 
 ### Caso 1: Phishing Bancario (Clasificación esperada: *MALICIOSO*)
 > "Estimado cliente de BANCO SEGURO, hemos detectado accesos inusuales en su banca móvil. Por seguridad, su tarjeta ha sido bloqueada temporalmente. Ingrese con urgencia a https://banco-seguro-verificar.net/login para restaurar sus credenciales inmediatamente y evitar la cancelación definitiva."

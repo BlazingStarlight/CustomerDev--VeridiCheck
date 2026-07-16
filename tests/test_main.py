@@ -14,7 +14,7 @@ class ApiTests(unittest.TestCase):
     def test_home_is_available(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("CyberShield AI", response.text)
+        self.assertIn("VeridiCheck", response.text)
 
     def test_phone_normalization(self):
         self.assertEqual(clean_phone_number("+51 999-888-777"), "+51999888777")

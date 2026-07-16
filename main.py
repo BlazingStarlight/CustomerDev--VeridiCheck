@@ -101,7 +101,7 @@ def get_mock_analysis(query: str) -> VerificationResult:
                 "1. No abras ningún enlace.\n"
                 "2. Bloquea al remitente.\n"
                 "3. Contacta a los canales oficiales.\n\n"
-                "_Analizado con Detector CyberShield_"
+                "_Analizado con VeridiCheck_"
             )
         )
     elif any(word in query_lower for word in ["ganaste", "premio", "felicidades", "dinero", "regalo", "sorteo", "gratis"]):
@@ -131,7 +131,7 @@ def get_mock_analysis(query: str) -> VerificationResult:
                 "⚠️ *Recomendaciones:*\n"
                 "1. No compartas información personal ni financiera.\n"
                 "2. Desconfía de sorteos aleatorios.\n\n"
-                "_Analizado con Detector CyberShield_"
+                "_Analizado con VeridiCheck_"
             )
         )
     else:
@@ -158,7 +158,7 @@ def get_mock_analysis(query: str) -> VerificationResult:
                 "📝 *Resumen:*\n"
                 "No se encontraron indicadores obvios de fraude, spam o malware.\n\n"
                 "🛡️ *Consejo:* Mantén siempre la prudencia digital activa.\n\n"
-                "_Analizado con Detector CyberShield_"
+                "_Analizado con VeridiCheck_"
             )
         )
 
