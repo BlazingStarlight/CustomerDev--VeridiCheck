@@ -70,7 +70,7 @@ Abre el archivo `.env` recién creado en tu editor de código favorito y configu
 ```env
 # Introduce tu clave de Gemini obtenida en Google AI Studio
 GEMINI_API_KEY=tu_clave_de_gemini_aqui
-GEMINI_MODEL=gemini-3.5-flash
+GEMINI_MODEL=gemini-2.5-flash
 
 # Copia automática del reporte por correo mediante EmailJS
 EMAILJS_SERVICE_ID=service_xxxxxxx
