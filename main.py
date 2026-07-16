@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 # En Vercel las variables se configuran en el panel; .env se usa solo en local.
 load_dotenv(BASE_DIR / ".env")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 GEMINI_TIMEOUT_SECONDS = 25
 
 app = FastAPI(
@@ -127,7 +127,7 @@ def get_mock_analysis(query: str) -> VerificationResult:
             status="malicioso",
             score=88,
             threat_type="Phishing / Suplantación",
-            summary="[MODO DEMO - Sin API Key de Gemini] Este mensaje parece ser un ataque de Phishing diseñado para robar tus credenciales bancarias o datos personales.",
+            summary="Este mensaje parece ser un ataque de Phishing diseñado para robar tus credenciales bancarias o datos personales.",
             reasons=[
                 "Solicitud urgente de verificación de datos personales o bancarios.",
                 "Uso de lenguaje de presión o miedo ('cuenta bloqueada', 'acción inmediata').",
@@ -158,7 +158,7 @@ def get_mock_analysis(query: str) -> VerificationResult:
             status="sospechoso",
             score=65,
             threat_type="Estafa / Scam",
-            summary="[MODO DEMO - Sin API Key de Gemini] Este mensaje tiene indicios de ser una estafa o sorteo falso diseñado para obtener tu información.",
+            summary="Este mensaje tiene indicios de ser una estafa o sorteo falso diseñado para obtener tu información.",
             reasons=[
                 "Promesas de premios de sorteos en los que probablemente no has participado.",
                 "Fomento de la codicia o urgencia por reclamar un premio.",
@@ -188,7 +188,7 @@ def get_mock_analysis(query: str) -> VerificationResult:
             status="seguro",
             score=12,
             threat_type="Ninguno",
-            summary="[MODO DEMO - Sin API Key de Gemini] El contenido analizado parece no contener amenazas evidentes ni patrones de comportamiento malicioso.",
+            summary="El contenido analizado parece no contener amenazas evidentes ni patrones de comportamiento malicioso.",
             reasons=[
                 "No solicita información confidencial bajo presión.",
                 "El lenguaje es normal y no intenta manipular al usuario.",
@@ -266,13 +266,11 @@ async def verify_content(request: VerificationRequest):
                 GEMINI_TIMEOUT_SECONDS,
             )
             result = get_mock_analysis(request.query)
-            result.summary = "[MODO DEMO - Gemini excedió el tiempo de respuesta] " + result.summary
             is_demo = True
         except Exception:
             logger.exception("Error al solicitar el análisis a Gemini")
             # Fallback a simulación si la API falla por saldo, red, etc.
             result = get_mock_analysis(request.query)
-            result.summary = "[MODO DEMO - El servicio de IA no está disponible] " + result.summary
             is_demo = True
 
     email_sent, email_status = await send_report_email(request.email, result)

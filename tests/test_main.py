@@ -18,7 +18,7 @@ class ApiTests(unittest.TestCase):
         self.assertIn("VeridiCheck", response.text)
 
     def test_uses_current_stable_gemini_model(self):
-        self.assertEqual(GEMINI_MODEL, "gemini-3.5-flash")
+        self.assertEqual(GEMINI_MODEL, "gemini-2.5-flash")
 
     def test_invalid_email_is_rejected(self):
         response = self.client.post(
@@ -72,7 +72,7 @@ class ApiTests(unittest.TestCase):
         payload = response.json()
         self.assertTrue(payload["is_demo"])
         self.assertTrue(payload["email_sent"])
-        self.assertIn("tiempo de respuesta", payload["summary"])
+        self.assertNotIn("MODO DEMO", payload["summary"])
         send_email.assert_awaited_once()
         gemini_client.aio.aclose.assert_awaited_once()
 
