@@ -50,14 +50,11 @@ class ApiTests(unittest.TestCase):
         self.assertIn("&lt;script&gt;", report)
 
     @patch("main.httpx.AsyncClient")
-    def test_resend_invalid_key_returns_actionable_status(self, client_class):
+    def test_emailjs_invalid_key_returns_actionable_status(self, client_class):
         response = Mock()
         response.is_error = True
         response.status_code = 403
-        response.json.return_value = {
-            "name": "invalid_api_key",
-            "message": "API key is invalid",
-        }
+        response.text = "Invalid public key"
         client = AsyncMock()
         client.post.return_value = response
         client_class.return_value.__aenter__.return_value = client
@@ -65,9 +62,12 @@ class ApiTests(unittest.TestCase):
         with patch.dict(
             os.environ,
             {
-                "RESEND_API_KEY": "re_test",
-                "RESEND_FROM_EMAIL": "VeridiCheck <onboarding@resend.dev>",
+                "EMAILJS_SERVICE_ID": "service_test",
+                "EMAILJS_TEMPLATE_ID": "template_test",
+                "EMAILJS_PUBLIC_KEY": "public_test",
+                "EMAILJS_PRIVATE_KEY": "private_test",
             },
+            clear=False,
         ):
             from main import send_report_email
             import asyncio
@@ -77,7 +77,14 @@ class ApiTests(unittest.TestCase):
             )
 
         self.assertFalse(sent)
-        self.assertIn("clave", status.lower())
+        self.assertIn("credenciales", status.lower())
+
+        request = client.post.call_args
+        self.assertEqual(request.args[0], "https://api.emailjs.com/api/v1.0/email/send")
+        payload = request.kwargs["json"]
+        self.assertEqual(payload["template_params"]["to_email"], "usuario@example.com")
+        self.assertIn("Reporte de VeridiCheck", payload["template_params"]["report_html"])
+        self.assertEqual(payload["accessToken"], "private_test")
 
 
 if __name__ == "__main__":

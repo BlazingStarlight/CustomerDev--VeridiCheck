@@ -70,47 +70,51 @@ def build_email_html(result: "VerificationResult") -> str:
 
 
 async def send_report_email(to_email: str, result: "VerificationResult") -> tuple[bool, str]:
-    api_key = os.getenv("RESEND_API_KEY", "").strip()
-    from_email = os.getenv("RESEND_FROM_EMAIL", "").strip()
-    if not api_key or not from_email:
+    service_id = os.getenv("EMAILJS_SERVICE_ID", "").strip()
+    template_id = os.getenv("EMAILJS_TEMPLATE_ID", "").strip()
+    public_key = os.getenv("EMAILJS_PUBLIC_KEY", "").strip()
+    private_key = os.getenv("EMAILJS_PRIVATE_KEY", "").strip()
+    if not service_id or not template_id or not public_key:
         return False, "El envío por correo aún no está configurado."
 
     try:
+        payload = {
+            "service_id": service_id,
+            "template_id": template_id,
+            "user_id": public_key,
+            "template_params": {
+                "to_email": to_email,
+                "subject": f"Reporte VeridiCheck: {result.status.title()} ({result.score}/100)",
+                "report_html": build_email_html(result),
+            },
+        }
+        if private_key:
+            payload["accessToken"] = private_key
+
         async with httpx.AsyncClient(timeout=15) as client:
             response = await client.post(
-                "https://api.resend.com/emails",
+                "https://api.emailjs.com/api/v1.0/email/send",
                 headers={
-                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
                     "User-Agent": "VeridiCheck/1.0",
                 },
-                json={
-                    "from": from_email,
-                    "to": [to_email],
-                    "subject": f"Reporte VeridiCheck: {result.status.title()} ({result.score}/100)",
-                    "html": build_email_html(result),
-                },
+                json=payload,
             )
             if response.is_error:
-                try:
-                    provider_error = response.json()
-                except ValueError:
-                    provider_error = {}
-                error_name = str(provider_error.get("name", "unknown_error"))
-                error_message = str(provider_error.get("message", ""))
+                error_message = response.text[:500]
                 logger.error(
-                    "Resend rechazó el envío: status=%s name=%s message=%s",
+                    "EmailJS rechazó el envío: status=%s message=%s",
                     response.status_code,
-                    error_name,
                     error_message,
                 )
-                if error_name == "invalid_api_key":
-                    return False, "La clave de correo no es válida. Crea una nueva clave de envío en Resend."
-                if response.status_code == 403:
-                    return False, "Resend rechazó el remitente o el destinatario. Revisa la verificación del dominio y los permisos de la clave."
-                return False, "Resend rechazó el envío. Revisa la configuración del servicio de correo."
+                if response.status_code in (401, 403):
+                    return False, "EmailJS rechazó las credenciales. Revisa las claves pública y privada."
+                if response.status_code == 429:
+                    return False, "EmailJS alcanzó temporalmente su límite de envíos. Intenta nuevamente en unos segundos."
+                return False, "EmailJS rechazó el envío. Revisa el servicio, la plantilla y sus variables."
         return True, "Enviamos una copia del reporte a tu correo."
     except Exception:
-        logger.exception("No se pudo enviar el reporte mediante Resend")
+        logger.exception("No se pudo enviar el reporte mediante EmailJS")
         return False, "No fue posible enviar la copia por correo."
 
 # Simulación de respuesta de IA cuando no hay API Key de Gemini

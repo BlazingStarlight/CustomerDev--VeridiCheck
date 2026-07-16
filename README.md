@@ -8,7 +8,7 @@ Este proyecto es una aplicación web interactiva que te permite verificar si un 
 
 - **Análisis Inteligente**: Clasifica la amenaza en una de tres categorías: *Seguro*, *Sospechoso* o *Malicioso*.
 - **Métricas de Seguridad**: Te otorga una puntuación de riesgo detallada (0-100%), tipo de amenaza y razones específicas del porqué de su clasificación.
-- **Copia automática por correo**: Envía el reporte mediante Resend cuando sus variables están configuradas.
+- **Copia automática por correo**: Envía el reporte mediante EmailJS cuando sus variables están configuradas.
 - **Compartir por WhatsApp**: Abre WhatsApp con el reporte precargado para que el usuario elija un amigo o familiar.
 - **Diseño Premium**: Interfaz moderna, oscura e inspirada en dashboards de ciberseguridad, utilizando efectos translúcidos (glassmorphism) y animaciones de radar radar.
 - **Modo Demo Resiliente**: Si no tienes una clave de API de Gemini a la mano, la aplicación entrará automáticamente en un **modo de simulación interactiva**. Podrás probar el funcionamiento pegando mensajes comunes de estafas bancarias o sorteos falsos.
@@ -72,12 +72,14 @@ Abre el archivo `.env` recién creado en tu editor de código favorito y configu
 GEMINI_API_KEY=tu_clave_de_gemini_aqui
 GEMINI_MODEL=gemini-3.5-flash
 
-# Copia automática del reporte por correo mediante Resend
-RESEND_API_KEY=tu_clave_de_resend
-RESEND_FROM_EMAIL=VeridiCheck <reportes@tu-dominio.com>
+# Copia automática del reporte por correo mediante EmailJS
+EMAILJS_SERVICE_ID=service_xxxxxxx
+EMAILJS_TEMPLATE_ID=template_xxxxxxx
+EMAILJS_PUBLIC_KEY=tu_clave_publica
+EMAILJS_PRIVATE_KEY=tu_clave_privada_opcional
 ```
 
-Para enviar a cualquier destinatario, Resend requiere verificar el dominio usado en `RESEND_FROM_EMAIL`. Durante las pruebas puedes utilizar el remitente de prueba de Resend, sujeto a sus restricciones de destinatario.
+En EmailJS, conecta primero un servicio de correo y crea una plantilla. Configura el campo **To Email** como `{{to_email}}`, el asunto como `{{subject}}` y el cuerpo HTML como `{{{report_html}}}` (tres llaves para renderizar el HTML del reporte). Los identificadores se encuentran en **Email Services**, **Email Templates** y **Account > API Keys**. La clave privada es opcional para la API `/send`, pero se recomienda mantenerla solo en el backend y en las variables de Vercel.
 
 ---
 
@@ -100,7 +102,7 @@ Verás una salida en consola indicando que el servidor está corriendo. Abre tu 
 El proyecto incluye `app.py`, `.python-version` y `vercel.json`, por lo que Vercel detecta FastAPI automáticamente.
 
 1. Publica el repositorio en GitHub e impórtalo desde el panel de Vercel.
-2. En **Settings > Environment Variables**, agrega `GEMINI_API_KEY`, `RESEND_API_KEY` y `RESEND_FROM_EMAIL`.
+2. En **Settings > Environment Variables**, agrega `GEMINI_API_KEY`, `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`, `EMAILJS_PUBLIC_KEY` y, si la usas, `EMAILJS_PRIVATE_KEY`.
 3. Despliega sin configurar Build Command ni Output Directory.
 4. Verifica `/`, `/docs` y una solicitud real desde la interfaz.
 
